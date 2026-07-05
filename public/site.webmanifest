@@ -1,0 +1,18 @@
+{
+  "name": "whatthenash — Nash's 3D workshop portfolio",
+  "short_name": "whatthenash",
+  "description": "A 3D explorable shed portfolio: electronics, AI agents, forging, photography, coffee, and everything else built by hand.",
+  "start_url": "/the-shed/",
+  "scope": "/the-shed/",
+  "display": "standalone",
+  "background_color": "#0c0a08",
+  "theme_color": "#0c0a08",
+  "icons": [
+    {
+      "src": "/the-shed/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
