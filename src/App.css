@@ -361,6 +361,7 @@ a:focus-visible {
 
 .cluster-overlay__panel {
   position: absolute;
+  box-sizing: border-box;
   top: 3rem;
   right: 3rem;
   bottom: 3rem;
@@ -1233,9 +1234,10 @@ a:focus-visible {
   }
 
   /* Stack the bottom rail: views sit above the desk sub-nav so they never
-     collide bottom-center vs bottom-right. */
+     collide bottom-center vs bottom-right. The sub-nav is forced to a single
+     compact row (label hidden) so its height is predictable. */
   .view-switcher {
-    bottom: 4.4rem;
+    bottom: 5.2rem;
     width: max-content;
     max-width: 96vw;
   }
@@ -1253,13 +1255,16 @@ a:focus-visible {
     right: 50%;
     transform: translateX(50%);
     bottom: 0.85rem;
-    flex-direction: column;
-    align-items: center;
     gap: 0.35rem;
+    max-width: 96vw;
   }
-  .desk-subnav__rail {
-    flex-wrap: wrap;
-    justify-content: center;
+  .desk-subnav__label {
+    display: none;
+  }
+  .desk-subnav__chip {
+    padding: 0.4rem 0.6rem 0.35rem;
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
   }
 
   .cluster-overlay__panel {
