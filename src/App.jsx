@@ -15,6 +15,7 @@ import IntroOverlay from './components/ui/IntroOverlay';
 import FadeOverlay from './components/ui/FadeOverlay';
 import WelcomeBanner from './components/ui/WelcomeBanner';
 import { useStore } from './store';
+import { prefersReducedMotion } from './motion';
 import './App.css';
 
 function useDiveFade() {
@@ -22,6 +23,10 @@ function useDiveFade() {
   const setFade = useStore((s) => s.setFade);
   useEffect(() => {
     if (introPhase !== 'diving') return;
+    if (prefersReducedMotion()) {
+      setFade(0);
+      return;
+    }
     const fadeStartDelay = 5.9;
     const obj = { v: 0 };
     const tween = gsap.to(obj, {
@@ -40,6 +45,10 @@ function useDiveUnFade() {
   const setFade = useStore((s) => s.setFade);
   useEffect(() => {
     if (introPhase !== 'inside') return;
+    if (prefersReducedMotion()) {
+      setFade(0);
+      return;
+    }
     const obj = { v: useStore.getState().fadeOpacity };
     const tween = gsap.to(obj, {
       v: 0,

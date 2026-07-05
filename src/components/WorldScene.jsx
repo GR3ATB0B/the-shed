@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { useStore } from '../store';
+import { prefersReducedMotion } from '../motion';
 import WorldModel from './WorldModel';
 
 const CABIN = new THREE.Vector3(-0.139, 0.05, -0.237);
@@ -28,6 +29,14 @@ function Camera({ paused, onArrived }) {
     if (introPhase !== 'diving' || dovingRef.current) return;
     dovingRef.current = true;
     const cam = camRef.current;
+
+    if (prefersReducedMotion()) {
+      cam.position.copy(DOOR_POS);
+      cam.lookAt(CABIN);
+      onArrived?.();
+      return;
+    }
+
     const posObj = {
       x: cam.position.x,
       y: cam.position.y,
@@ -80,6 +89,7 @@ export default function WorldScene({ onArrived }) {
   return (
     <Canvas
       shadows
+      dpr={[1, 2]}
       gl={{
         antialias: true,
         toneMapping: THREE.ACESFilmicToneMapping,

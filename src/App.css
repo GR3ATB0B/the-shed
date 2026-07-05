@@ -1171,6 +1171,82 @@ canvas {
   font: inherit;
 }
 
+/* Mobile viability pass — keep controls from overlapping / overflowing at
+   small widths. Not a full mobile redesign. */
+@media (max-width: 640px) {
+  .hud {
+    padding: 0.75rem 0.85rem;
+  }
+  .hud-brand {
+    font-size: 0.95rem;
+    padding: 0.45rem 0.8rem 0.4rem;
+  }
+
+  /* Stack the bottom rail: views sit above the desk sub-nav so they never
+     collide bottom-center vs bottom-right. */
+  .view-switcher {
+    bottom: 4.4rem;
+    width: max-content;
+    max-width: 96vw;
+  }
+  .view-switcher__rail {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+  .view-switcher__chip {
+    padding: 0.45rem 0.8rem 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .desk-subnav {
+    right: 50%;
+    transform: translateX(50%);
+    bottom: 0.85rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .desk-subnav__rail {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .cluster-overlay__panel {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    padding: 3rem 1.5rem 2rem;
+    transform: translateX(140%) rotate(0deg);
+  }
+  .cluster-overlay.open .cluster-overlay__panel {
+    transform: translateX(0) rotate(0deg);
+  }
+  .cluster-overlay__title {
+    font-size: 2rem;
+  }
+
+  .cork-full__sheet {
+    inset: 0;
+    border-width: 0;
+    border-radius: 0;
+    padding: 1.5rem 1.2rem 3rem;
+  }
+  .cork-full__notes {
+    grid-template-columns: 1fr;
+    gap: 1.6rem;
+  }
+
+  .welcome-banner {
+    top: 3.5rem;
+    width: 94vw;
+  }
+  .welcome-banner__card {
+    width: 100%;
+  }
+}
+
 /* Respect reduced-motion for CSS-driven animation */
 @media (prefers-reduced-motion: reduce) {
   .intro-overlay__center {

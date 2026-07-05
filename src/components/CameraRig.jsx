@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { useStore } from '../store';
+import { motionDuration, prefersReducedMotion } from '../motion';
 
 const VIEWS = {
   home: {
@@ -78,6 +79,7 @@ export default function CameraRig() {
   useEffect(() => {
     const v = VIEWS[currentView] || VIEWS.home;
     animating.current = true;
+    const dur = motionDuration(1.1);
     const tweenPos = {
       x: restingPos.current.x,
       y: restingPos.current.y,
@@ -94,7 +96,7 @@ export default function CameraRig() {
       x: v.pos.x,
       y: v.pos.y,
       z: v.pos.z,
-      duration: 1.1,
+      duration: dur,
       ease: 'power3.inOut',
       onUpdate: () => {
         restingPos.current.set(tweenPos.x, tweenPos.y, tweenPos.z);
@@ -104,7 +106,7 @@ export default function CameraRig() {
       x: v.look.x,
       y: v.look.y,
       z: v.look.z,
-      duration: 1.1,
+      duration: dur,
       ease: 'power3.inOut',
       onUpdate: () => {
         restingLook.current.set(tweenLook.x, tweenLook.y, tweenLook.z);
@@ -115,7 +117,7 @@ export default function CameraRig() {
     });
     gsap.to(tweenFov, {
       f: v.fov,
-      duration: 1.1,
+      duration: dur,
       ease: 'power3.inOut',
       onUpdate: () => {
         camera.fov = tweenFov.f;
@@ -124,13 +126,13 @@ export default function CameraRig() {
     });
     gsap.to(parallaxScale, {
       current: v.parallax,
-      duration: 1.1,
+      duration: dur,
       ease: 'power3.inOut',
     });
   }, [currentView, camera]);
 
   useFrame((_, dt) => {
-    if (animating.current) {
+    if (animating.current || prefersReducedMotion()) {
       camera.position.copy(restingPos.current);
       target.current.copy(restingLook.current);
       camera.lookAt(target.current);

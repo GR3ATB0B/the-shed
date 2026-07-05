@@ -191,6 +191,21 @@ export default function InsideModel(props) {
     setClusterMeshes(registry);
     setAreaMeshes(areaRegistry);
 
+    // Sanity check: cluster membership is matched by string prefix against
+    // Blender mesh names (which carry typos like "circut", "dumbbellwight").
+    // If a re-export renames a mesh, a cluster silently goes dead. Warn loudly
+    // so the drift is caught instead of shipping a non-interactive cluster.
+    const emptyClusters = Object.entries(registry)
+      .filter(([, meshes]) => meshes.length === 0)
+      .map(([id]) => id);
+    if (emptyClusters.length > 0) {
+      console.warn(
+        '[InsideModel] clusters matched zero meshes (mesh names may have ' +
+          'drifted on GLB re-export):',
+        emptyClusters,
+      );
+    }
+
     if (import.meta.env.DEV) {
       window.__insideScene = scene;
       window.__THREE = THREE;
