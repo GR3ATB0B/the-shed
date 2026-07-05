@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import {
@@ -83,7 +83,9 @@ function patchShedRoomMaterial(mesh) {
 // ancestors) at load time, so the raycast hit itself almost always carries
 // them — read it straight off the hit. The parent walk only remains as a
 // fallback for unstamped meshes nested inside a stamped group.
-function resolveTargets(obj) {
+// Shared with HoverProbe, which resolves its own per-frame raycast hits.
+// eslint-disable-next-line react-refresh/only-export-components
+export function resolveTargets(obj) {
   if (obj.userData?.clusterId || obj.userData?.areaId) {
     return {
       clusterId: obj.userData.clusterId ?? null,
@@ -105,42 +107,14 @@ function resolveTargets(obj) {
 
 export default function InsideModel(props) {
   const { scene } = useGLTF(INSIDE_MODEL_URL);
-  const setHovered = useStore((s) => s.setHovered);
   const selectCluster = useStore((s) => s.selectCluster);
   const setView = useStore((s) => s.setView);
   const setClusterMeshes = useStore((s) => s.setClusterMeshes);
   const setAreaMeshes = useStore((s) => s.setAreaMeshes);
-  const hoveredRef = useRef(null);
 
-  const onPointerOver = useCallback(
-    (e) => {
-      const view = useStore.getState().currentView;
-      const { clusterId, areaId } = resolveTargets(e.object);
-      const id = view === 'home' ? areaId : clusterId;
-      if (!id || id === hoveredRef.current) return;
-      e.stopPropagation();
-      hoveredRef.current = id;
-      setHovered(id);
-      document.body.style.cursor = 'pointer';
-    },
-    [setHovered],
-  );
-
-  const onPointerOut = useCallback(
-    (e) => {
-      const view = useStore.getState().currentView;
-      const { clusterId, areaId } = resolveTargets(e.object);
-      const id = view === 'home' ? areaId : clusterId;
-      if (!id) return;
-      if (hoveredRef.current === id) {
-        hoveredRef.current = null;
-        setHovered(null);
-        document.body.style.cursor = '';
-      }
-    },
-    [setHovered],
-  );
-
+  // Hover is NOT handled here — HoverProbe raycasts per-frame instead,
+  // because the parallax camera drifts under a stationary cursor and
+  // event-driven hover goes stale. Only clicks stay on r3f's event path.
   const onClick = useCallback(
     (e) => {
       const view = useStore.getState().currentView;
@@ -274,12 +248,7 @@ export default function InsideModel(props) {
   }, [scene, setClusterMeshes, setAreaMeshes]);
 
   return (
-    <group
-      onPointerOver={onPointerOver}
-      onPointerOut={onPointerOut}
-      onClick={onClick}
-      {...props}
-    >
+    <group onClick={onClick} {...props}>
       <primitive object={scene} />
     </group>
   );

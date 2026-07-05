@@ -7,6 +7,7 @@ import Lighting from './Lighting';
 import PostProcessing from './PostProcessing';
 import CameraRig from './CameraRig';
 import HoverHighlight from './HoverHighlight';
+import HoverProbe from './HoverProbe';
 import ProgressBridge from './ProgressBridge';
 
 export default function Scene() {
@@ -55,6 +56,7 @@ export default function Scene() {
             />
           </Environment>
         </Suspense>
+        <HoverProbe />
         <HoverHighlight />
         {debugOrbit ? (
           <OrbitControls
