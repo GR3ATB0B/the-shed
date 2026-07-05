@@ -28,7 +28,15 @@ export default function WelcomeBanner() {
   const msg = messages[step];
 
   return (
-    <div className="welcome-banner">
+    <>
+      {/* Dim the scene while the banner is up — the 3D world behind it is
+          not meant to be interacted with yet, and clicking through dismisses. */}
+      <div
+        className="welcome-banner__backdrop"
+        onClick={dismissWelcome}
+        title="Dismiss"
+      />
+      <div className="welcome-banner">
       <div className="welcome-banner__card">
         <div className="welcome-banner__kicker">welcome</div>
         <h2 className="welcome-banner__title">{msg.title}</h2>
@@ -49,11 +57,15 @@ export default function WelcomeBanner() {
               {msg.cta || 'close'}
             </button>
           )}
-          <button className="welcome-banner__skip" onClick={dismissWelcome}>
-            skip
+          <button
+            className="welcome-banner__skip"
+            onClick={dismissWelcome}
+            aria-label="Skip the welcome tour"
+          >
+            skip →
           </button>
         </div>
-        <div className="welcome-banner__dots">
+        <div className="welcome-banner__dots" aria-hidden="true">
           {messages.map((_, i) => (
             <span
               key={i}
@@ -64,6 +76,7 @@ export default function WelcomeBanner() {
           ))}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

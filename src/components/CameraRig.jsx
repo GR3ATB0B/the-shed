@@ -58,6 +58,8 @@ export default function CameraRig() {
   const desiredRef = useRef(new THREE.Vector3());
   const lookRef = useRef(new THREE.Vector3());
 
+  /* eslint-disable react-hooks/immutability -- r3f cameras are imperative
+     THREE objects; mutating position/fov is the intended API. */
   useEffect(() => {
     const v = VIEWS.home;
     camera.position.copy(v.pos);
@@ -68,9 +70,13 @@ export default function CameraRig() {
       window.__camera = camera;
     }
   }, [camera]);
+  /* eslint-enable react-hooks/immutability */
 
   useEffect(() => {
     const onMove = (e) => {
+      // While an overlay is open the camera is pinned anyway — skip the work
+      // entirely instead of computing parallax that gets damped to ~zero.
+      if (useStore.getState().selectedCluster) return;
       mouse.current.x = (e.clientX / size.width) * 2 - 1;
       mouse.current.y = (e.clientY / size.height) * 2 - 1;
     };

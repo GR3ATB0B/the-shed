@@ -12,6 +12,9 @@ import { useStore } from '../store';
 
 const INSIDE_MODEL_URL = assetUrl('models/inside.glb');
 
+// Stray objects left in the Blender export that should never render.
+// 'Sphere002' is a leftover debug/reference sphere in inside.glb — hiding it
+// here is cheaper than re-exporting the GLB.
 const HIDE_TOPLEVEL_NAMES = new Set(['Sphere002']);
 
 function findTopLevelName(mesh, root) {
@@ -76,16 +79,28 @@ function patchShedRoomMaterial(mesh) {
   mesh.material = mat;
 }
 
+// clusterId/areaId are stamped directly onto every cluster mesh (and its
+// ancestors) at load time, so the raycast hit itself almost always carries
+// them — read it straight off the hit. The parent walk only remains as a
+// fallback for unstamped meshes nested inside a stamped group.
 function resolveTargets(obj) {
-  let p = obj;
-  let clusterId = null;
-  let areaId = null;
+  if (obj.userData?.clusterId || obj.userData?.areaId) {
+    return {
+      clusterId: obj.userData.clusterId ?? null,
+      areaId: obj.userData.areaId ?? null,
+    };
+  }
+  let p = obj.parent;
   while (p) {
-    if (!clusterId && p.userData?.clusterId) clusterId = p.userData.clusterId;
-    if (!areaId && p.userData?.areaId) areaId = p.userData.areaId;
+    if (p.userData?.clusterId || p.userData?.areaId) {
+      return {
+        clusterId: p.userData.clusterId ?? null,
+        areaId: p.userData.areaId ?? null,
+      };
+    }
     p = p.parent;
   }
-  return { clusterId, areaId };
+  return { clusterId: null, areaId: null };
 }
 
 export default function InsideModel(props) {
@@ -130,15 +145,17 @@ export default function InsideModel(props) {
     (e) => {
       const view = useStore.getState().currentView;
       const { clusterId, areaId } = resolveTargets(e.object);
-      if (view === 'home') {
-        if (!areaId) return;
+      const id = view === 'home' ? areaId : clusterId;
+      if (!id) {
+        // Clicked set dressing / the room shell — flash a brief "just
+        // scenery" cue so interactive vs decorative stays legible.
         e.stopPropagation();
-        setView(areaId);
-      } else {
-        if (!clusterId) return;
-        e.stopPropagation();
-        selectCluster(clusterId);
+        useStore.getState().flashMissClick();
+        return;
       }
+      e.stopPropagation();
+      if (view === 'home') setView(id);
+      else selectCluster(id);
     },
     [selectCluster, setView],
   );
@@ -280,6 +297,9 @@ export default function InsideModel(props) {
   );
 }
 
+// The preload trigger deliberately lives next to the model URL it preloads;
+// losing fast-refresh on this file is an acceptable trade.
+// eslint-disable-next-line react-refresh/only-export-components
 export function preloadInsideModel() {
   useGLTF.preload(INSIDE_MODEL_URL);
 }

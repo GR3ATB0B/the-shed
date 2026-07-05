@@ -4,6 +4,10 @@ export const AREAS = {
   bookshelf: { label: 'Bookshelf', hint: 'click to enter' },
 };
 
+// Identifier conventions: cluster/area ids are single lowercase words
+// ('rcvehicles'); view ids are kebab-case ('desk-corkboard'); `members` are
+// Blender mesh-name prefixes and MUST match the GLB exactly (typos like
+// 'circut' and 'dumbbellwight' included) — never "fix" those here.
 export const CLUSTERS = {
   code: {
     label: 'Python & Coding',

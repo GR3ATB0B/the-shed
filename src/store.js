@@ -37,7 +37,16 @@ export const useStore = create((set, get) => ({
     if (typeof window !== 'undefined') {
       localStorage.removeItem('nash_entered');
     }
-    set({ introPhase: 'aerial', welcomeDismissed: false, fadeOpacity: 0 });
+    // Reset the inside-scene state too, so re-entering after the replay
+    // doesn't land on a stale view or a still-open overlay.
+    set({
+      introPhase: 'aerial',
+      welcomeDismissed: false,
+      fadeOpacity: 0,
+      currentView: 'home',
+      selectedCluster: null,
+      hoveredCluster: null,
+    });
   },
 
   currentView: 'home',
@@ -55,6 +64,10 @@ export const useStore = create((set, get) => ({
   clusterMeshes: {},
   areaMeshes: { desk: [], floor: [], bookshelf: [] },
   setHovered: (id) => set({ hoveredCluster: id }),
+  // Bumped when the user clicks set dressing / empty scene, so the UI can
+  // flash a brief "just scenery" cue to contrast with the hover highlight.
+  missClickCount: 0,
+  flashMissClick: () => set((s) => ({ missClickCount: s.missClickCount + 1 })),
   selectCluster: (id) => set({ selectedCluster: id }),
   deselectCluster: () => set({ selectedCluster: null }),
   setClusterMeshes: (meshes) => set({ clusterMeshes: meshes }),
