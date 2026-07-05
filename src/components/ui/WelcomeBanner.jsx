@@ -21,7 +21,7 @@ export default function WelcomeBanner() {
     {
       title: 'A few good places to start.',
       body: 'The corkboard for the latest. The brain for AI stuff. The coffee mug if you want to say hi.',
-      cta: 'Got it',
+      cta: 'got it →',
     },
   ];
 

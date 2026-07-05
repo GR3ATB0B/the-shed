@@ -107,6 +107,16 @@ a:focus-visible {
   font-size: 0.9rem;
 }
 
+/* "Just scenery" miss-click cue — muted vs. the normal hover label and tilted
+   the other way, so it reads as a shrug rather than a discovery. */
+.hover-label--miss.visible {
+  transform: translate(-50%, 0) rotate(1.2deg);
+}
+
+.hover-label--miss .hover-label__text {
+  color: var(--ink-soft);
+}
+
 .hover-label__hint {
   font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
   color: var(--accent);
