@@ -1,4 +1,30 @@
+import { useEffect, useRef } from 'react';
+
 export default function Lighting() {
+  const sunRef = useRef();
+
+  useEffect(() => {
+    const sun = sunRef.current;
+    if (!sun) return;
+    // Static interior: render the shadow map for a couple of frames then
+    // freeze it. Saves re-rendering two shadow passes every frame.
+    sun.shadow.autoUpdate = true;
+    sun.shadow.needsUpdate = true;
+    let frames = 0;
+    let raf;
+    const tick = () => {
+      frames += 1;
+      if (frames >= 3) {
+        sun.shadow.autoUpdate = false;
+        return;
+      }
+      sun.shadow.needsUpdate = true;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   return (
     <>
       <ambientLight color="#ffe8cc" intensity={0.45} />
@@ -8,12 +34,13 @@ export default function Lighting() {
         intensity={0.35}
       />
       <directionalLight
+        ref={sunRef}
         color="#ffe2b8"
         intensity={0.5}
         position={[5, 7, 4]}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-bias={-0.0005}
         shadow-camera-left={-8}
         shadow-camera-right={8}

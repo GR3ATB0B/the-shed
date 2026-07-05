@@ -55,6 +55,8 @@ export default function CameraRig() {
   const target = useRef(new THREE.Vector3().copy(VIEWS.home.look));
   const parallaxScale = useRef(VIEWS.home.parallax);
   const animating = useRef(false);
+  const desiredRef = useRef(new THREE.Vector3());
+  const lookRef = useRef(new THREE.Vector3());
 
   useEffect(() => {
     const v = VIEWS.home;
@@ -146,14 +148,14 @@ export default function CameraRig() {
     const py =
       (-mouse.current.y * parallaxScale.current * 0.5 + breathY) * damp;
 
-    const desired = new THREE.Vector3(
+    const desired = desiredRef.current.set(
       restingPos.current.x + px,
       restingPos.current.y + py,
       restingPos.current.z,
     );
     camera.position.lerp(desired, Math.min(1, dt * 4));
 
-    const look = new THREE.Vector3(
+    const look = lookRef.current.set(
       restingLook.current.x +
         mouse.current.x * parallaxScale.current * 1.0 * damp,
       restingLook.current.y -

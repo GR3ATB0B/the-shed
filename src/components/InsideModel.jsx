@@ -144,6 +144,7 @@ export default function InsideModel(props) {
   );
 
   useEffect(() => {
+    scene.updateMatrixWorld(true);
     scene.traverse((o) => {
       if (HIDE_TOPLEVEL_NAMES.has(o.name)) o.visible = false;
     });
@@ -151,16 +152,36 @@ export default function InsideModel(props) {
     const registry = {};
     Object.keys(CLUSTERS).forEach((id) => (registry[id] = []));
 
+    const _box = new THREE.Box3();
+    const _size = new THREE.Vector3();
+    // Meshes with a bounding box smaller than this in every axis don't earn a
+    // shadow-map slot — the shadow is invisible at this scale but still costs a
+    // render pass.
+    const MIN_SHADOW_CASTER = 0.08;
+
     scene.traverse((o) => {
       if (!o.isMesh) return;
-      o.castShadow = true;
-      o.receiveShadow = true;
       if (o.name === 'ShedRoom' && o.material) {
+        // The room shell receives shadows but never needs to cast them.
+        o.castShadow = false;
+        o.receiveShadow = true;
         patchShedRoomMaterial(o);
         return;
       }
+
+      o.geometry.computeBoundingBox();
+      _box.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld);
+      _box.getSize(_size);
+      const decoration = isDecoration(findTopLevelName(o, scene)) || isDecoration(o.name);
+      const tiny =
+        _size.x < MIN_SHADOW_CASTER &&
+        _size.y < MIN_SHADOW_CASTER &&
+        _size.z < MIN_SHADOW_CASTER;
+      o.castShadow = !decoration && !tiny;
+      o.receiveShadow = true;
+
       const topName = findTopLevelName(o, scene);
-      if (isDecoration(topName) || isDecoration(o.name)) return;
+      if (decoration) return;
       const clusterId = clusterForName(topName) || clusterForName(o.name);
       if (clusterId) {
         registry[clusterId].push(o);

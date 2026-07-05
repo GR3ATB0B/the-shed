@@ -3,23 +3,23 @@ import { useEffect, useState } from 'react';
 
 export default function LoadingScreen() {
   const { active, progress } = useProgress();
-  const [visible, setVisible] = useState(true);
+  const [hidden, setHidden] = useState(false);
+
+  const done = !active && progress >= 100;
 
   useEffect(() => {
-    if (!active && progress >= 100) {
-      const t = setTimeout(() => setVisible(false), 500);
-      return () => clearTimeout(t);
-    }
-    if (active) setVisible(true);
-  }, [active, progress]);
+    if (!done) return;
+    const t = setTimeout(() => setHidden(true), 500);
+    return () => clearTimeout(t);
+  }, [done]);
 
-  if (!visible) return null;
+  if (hidden) return null;
 
   const pct = Math.min(100, Math.round(progress));
 
   return (
     <div
-      className={`loading-screen ${!active && progress >= 100 ? 'loading-screen--done' : ''}`}
+      className={`loading-screen ${done ? 'loading-screen--done' : ''}`}
       role="status"
       aria-live="polite"
       aria-label={`Loading the shed, ${pct} percent`}
