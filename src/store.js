@@ -59,7 +59,4 @@ export const useStore = create((set, get) => ({
   deselectCluster: () => set({ selectedCluster: null }),
   setClusterMeshes: (meshes) => set({ clusterMeshes: meshes }),
   setAreaMeshes: (meshes) => set({ areaMeshes: meshes }),
-
-  muted: false,
-  toggleMute: () => set((s) => ({ muted: !s.muted })),
 }));

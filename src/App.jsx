@@ -2,6 +2,10 @@ import { useEffect } from 'react';
 import gsap from 'gsap';
 import Scene from './components/Scene';
 import WorldScene from './components/WorldScene';
+import { preloadInsideModel } from './components/InsideModel';
+import ErrorBoundary from './components/ErrorBoundary';
+import LoadingScreen from './components/ui/LoadingScreen';
+import AccessibleContent from './components/ui/AccessibleContent';
 import HUD from './components/ui/HUD';
 import ViewSwitcher from './components/ui/ViewSwitcher';
 import ClusterOverlay from './components/ui/ClusterOverlay';
@@ -55,13 +59,23 @@ export default function App() {
   useDiveFade();
   useDiveUnFade();
 
+  useEffect(() => {
+    if (introPhase === 'diving' || introPhase === 'inside') {
+      preloadInsideModel();
+    }
+  }, [introPhase]);
+
   const inIntro = introPhase === 'aerial' || introPhase === 'diving';
 
   return (
     <>
       <div className={`scene-wrapper ${selectedCluster ? 'blurred' : ''}`}>
-        {inIntro ? <WorldScene onArrived={finishDive} /> : <Scene />}
+        <ErrorBoundary>
+          {inIntro ? <WorldScene onArrived={finishDive} /> : <Scene />}
+        </ErrorBoundary>
       </div>
+      <LoadingScreen />
+      <AccessibleContent />
       <FadeOverlay />
       <IntroOverlay />
       {introPhase === 'inside' && (

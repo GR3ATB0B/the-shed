@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { Environment, OrbitControls } from '@react-three/drei';
+import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import { Suspense, useState } from 'react';
 import * as THREE from 'three';
 import InsideModel from './InsideModel';
@@ -25,7 +25,27 @@ export default function Scene() {
       <Suspense fallback={null}>
         <Lighting />
         <InsideModel />
-        <Environment preset="apartment" environmentIntensity={0.35} />
+        <Environment resolution={128} environmentIntensity={0.35}>
+          <color attach="background" args={['#1a140c']} />
+          <Lightformer
+            intensity={1.4}
+            color="#ffe2b8"
+            position={[0, 4, -2]}
+            scale={[6, 3, 1]}
+          />
+          <Lightformer
+            intensity={0.6}
+            color="#ffd9a8"
+            position={[-4, 2, 2]}
+            scale={[3, 3, 1]}
+          />
+          <Lightformer
+            intensity={0.4}
+            color="#a8c5e0"
+            position={[4, 3, 2]}
+            scale={[3, 3, 1]}
+          />
+        </Environment>
       </Suspense>
       {debugOrbit ? (
         <OrbitControls

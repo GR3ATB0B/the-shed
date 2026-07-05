@@ -154,7 +154,6 @@ const DECORATION_PREFIXES = [
   'wrench',
   'tape',
   'Tool_box_Cube',
-  'GoldBar_Cube',
 ];
 
 export function isDecoration(name) {

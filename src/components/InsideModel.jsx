@@ -7,7 +7,10 @@ import {
   clusterForName,
   isDecoration,
 } from '../clusters';
+import { assetUrl } from '../assetPath';
 import { useStore } from '../store';
+
+const INSIDE_MODEL_URL = assetUrl('models/inside.glb');
 
 const HIDE_TOPLEVEL_NAMES = new Set(['Sphere002']);
 
@@ -86,7 +89,7 @@ function resolveTargets(obj) {
 }
 
 export default function InsideModel(props) {
-  const { scene } = useGLTF('/models/inside.glb');
+  const { scene } = useGLTF(INSIDE_MODEL_URL);
   const setHovered = useStore((s) => s.setHovered);
   const selectCluster = useStore((s) => s.selectCluster);
   const setView = useStore((s) => s.setView);
@@ -241,4 +244,6 @@ export default function InsideModel(props) {
   );
 }
 
-useGLTF.preload('/models/inside.glb');
+export function preloadInsideModel() {
+  useGLTF.preload(INSIDE_MODEL_URL);
+}

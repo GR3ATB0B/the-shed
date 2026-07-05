@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { Environment, PerspectiveCamera } from '@react-three/drei';
+import { Environment, Lightformer, PerspectiveCamera } from '@react-three/drei';
 import { Suspense, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -110,7 +110,28 @@ export default function WorldScene({ onArrived }) {
           groundColor="#3a2814"
           intensity={0.4}
         />
-        <Environment preset="park" environmentIntensity={0.4} />
+        <Environment resolution={128} environmentIntensity={0.4}>
+          <Lightformer
+            intensity={2}
+            color="#dcecff"
+            position={[0, 6, 0]}
+            scale={[10, 10, 1]}
+            rotation={[Math.PI / 2, 0, 0]}
+          />
+          <Lightformer
+            intensity={1}
+            color="#ffdca8"
+            position={[6, 4, 4]}
+            scale={[4, 4, 1]}
+          />
+          <Lightformer
+            intensity={0.5}
+            color="#3a5a2c"
+            position={[0, -4, 0]}
+            scale={[10, 10, 1]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          />
+        </Environment>
         <WorldModel />
       </Suspense>
     </Canvas>
