@@ -38,7 +38,7 @@ export const CLUSTERS = {
   corkboard: {
     label: 'Bulletin Board',
     area: 'desk',
-    view: 'desk-corkboard',
+    view: 'desk',
     members: ['Wall_corkboard'],
   },
   camping: {

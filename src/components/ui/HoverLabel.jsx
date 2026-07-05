@@ -1,4 +1,5 @@
 import { useStore } from '../../store';
+import { CLUSTERS, AREAS } from '../../clusters';
 
 const HINTS = {
   home: 'click around — desk, floor, bookshelf',
@@ -11,13 +12,23 @@ const HINTS = {
 
 export default function HoverLabel() {
   const currentView = useStore((s) => s.currentView);
+  const hoveredCluster = useStore((s) => s.hoveredCluster);
   const selectedCluster = useStore((s) => s.selectedCluster);
   if (selectedCluster) return null;
-  const hint = HINTS[currentView];
-  if (!hint) return null;
+
+  const hoveredLabel =
+    currentView === 'home'
+      ? AREAS[hoveredCluster]?.label
+      : CLUSTERS[hoveredCluster]?.label;
+
+  const showingHover = !!hoveredLabel;
+  const text = hoveredLabel || HINTS[currentView];
+  if (!text) return null;
+
   return (
-    <div className="hover-label visible">
-      <span className="hover-label__text">{hint}</span>
+    <div className={`hover-label visible ${showingHover ? 'hover-label--named' : ''}`}>
+      <span className="hover-label__text">{text}</span>
+      {showingHover && <span className="hover-label__hint">click to open</span>}
     </div>
   );
 }

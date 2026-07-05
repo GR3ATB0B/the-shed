@@ -21,6 +21,9 @@ export default function ClusterOverlay() {
 
   useEffect(() => {
     if (!selectedCluster) return;
+    // Fullscreen clusters (corkboard) cover the whole viewport, so a camera
+    // move underneath is wasted — skip it.
+    if (CLUSTER_CONTENT[selectedCluster]?.fullscreen) return;
     const desiredView = VIEW_BY_CLUSTER[selectedCluster];
     if (desiredView && desiredView !== currentView) setView(desiredView);
   }, [selectedCluster, setView, currentView]);
