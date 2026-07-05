@@ -7,6 +7,7 @@ import Lighting from './Lighting';
 import PostProcessing from './PostProcessing';
 import CameraRig from './CameraRig';
 import HoverHighlight from './HoverHighlight';
+import ProgressBridge from './ProgressBridge';
 
 export default function Scene() {
   const [debugOrbit, setDebugOrbit] = useState(false);
@@ -28,6 +29,7 @@ export default function Scene() {
         }
       >
         <color attach="background" args={['#0c0a08']} />
+        <ProgressBridge />
         <Suspense fallback={null}>
           <Lighting />
           <InsideModel />

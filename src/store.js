@@ -8,6 +8,20 @@ const hasEntered =
 
 export const useStore = create((set, get) => ({
   introPhase: hasEntered ? 'inside' : 'aerial',
+
+  // Asset-load progress, mirrored from drei's useProgress by ProgressBridge
+  // (which lives in the lazy 3D chunk). LoadingScreen reads it from here so
+  // the entry bundle never has to import three/drei just for a progress bar.
+  loadActive: false,
+  loadProgress: 0,
+  setLoadStatus: (active, progress) =>
+    set((s) => ({
+      loadActive: active,
+      // Progress only ever moves forward — a second loader batch (e.g. the
+      // inside model after the intro) reports from 0 again, which would make
+      // the already-hidden bar flash backwards.
+      loadProgress: Math.max(s.loadProgress, progress),
+    })),
   welcomeDismissed: hasEntered,
   fadeOpacity: 0,
 

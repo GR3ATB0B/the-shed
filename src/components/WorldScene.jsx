@@ -7,6 +7,7 @@ import { useStore } from '../store';
 import { prefersReducedMotion } from '../motion';
 import WorldModel from './WorldModel';
 import PostProcessing from './PostProcessing';
+import ProgressBridge from './ProgressBridge';
 
 const CABIN = new THREE.Vector3(-0.139, 0.05, -0.237);
 const AERIAL_POS = new THREE.Vector3(1.55, 0.95, 1.75);
@@ -113,6 +114,7 @@ export default function WorldScene({ onArrived }) {
     >
       <color attach="background" args={['#6e9bb8']} />
       <fog attach="fog" args={['#85a8c4', 8, 22]} />
+      <ProgressBridge />
       <Suspense fallback={null}>
         <Camera onArrived={onArrived} />
         <ambientLight intensity={0.55} color="#fff2dc" />
