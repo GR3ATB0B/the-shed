@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useStore } from '../../store';
 import { CLUSTERS } from '../../clusters';
 import { CLUSTER_CONTENT } from '../../content';
@@ -6,6 +6,43 @@ import { CLUSTER_CONTENT } from '../../content';
 const VIEW_BY_CLUSTER = Object.fromEntries(
   Object.entries(CLUSTERS).map(([id, c]) => [id, c.view]),
 );
+
+const FOCUSABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])';
+
+// Dialog focus management: on open, remember the opener and move focus to
+// the first control in the panel; trap Tab inside; on close, give focus back.
+function useDialogFocus(open, panelRef) {
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const opener = document.activeElement;
+    const focusables = () => [...panel.querySelectorAll(FOCUSABLE)];
+    focusables()[0]?.focus();
+
+    const onKeyDown = (e) => {
+      if (e.key !== 'Tab') return;
+      const els = focusables();
+      if (!els.length) return;
+      const first = els[0];
+      const last = els[els.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    panel.addEventListener('keydown', onKeyDown);
+    return () => {
+      panel.removeEventListener('keydown', onKeyDown);
+      if (opener instanceof HTMLElement && document.contains(opener)) {
+        opener.focus();
+      }
+    };
+  }, [open, panelRef]);
+}
 
 function LinkList({ links, className }) {
   if (!links?.length) return null;
@@ -27,6 +64,8 @@ function LinkList({ links, className }) {
 }
 
 function ClusterPanel({ content, open, onClose }) {
+  const panelRef = useRef(null);
+  useDialogFocus(open, panelRef);
   return (
     <div className={`cluster-overlay ${open ? 'open' : ''}`}>
       <div
@@ -34,7 +73,14 @@ function ClusterPanel({ content, open, onClose }) {
         onClick={onClose}
         title="Close"
       />
-      <aside className="cluster-overlay__panel" aria-hidden={!open}>
+      <aside
+        ref={panelRef}
+        className="cluster-overlay__panel"
+        aria-hidden={!open}
+        role="dialog"
+        aria-modal={open || undefined}
+        aria-label={content?.title}
+      >
         {content && (
           <>
             <button
@@ -69,10 +115,18 @@ function ClusterPanel({ content, open, onClose }) {
 }
 
 function CorkboardSheet({ content, open, onClose }) {
+  const sheetRef = useRef(null);
+  useDialogFocus(open, sheetRef);
   return (
     <div className={`cork-full ${open ? 'open' : ''}`}>
       <div className="cork-full__backdrop" onClick={onClose} title="Close" />
-      <div className="cork-full__sheet">
+      <div
+        ref={sheetRef}
+        className="cork-full__sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={content.title}
+      >
         <header className="cork-full__header">
           <button
             className="cork-full__close"

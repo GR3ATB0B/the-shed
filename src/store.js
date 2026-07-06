@@ -10,8 +10,8 @@ export const useStore = create((set, get) => ({
   introPhase: hasEntered ? 'inside' : 'aerial',
 
   // Asset-load progress, mirrored from drei's useProgress by ProgressBridge
-  // (which lives in the lazy 3D chunk). LoadingScreen reads it from here so
-  // the entry bundle never has to import three/drei just for a progress bar.
+  // (which lives in the split 3D chunks). LoadingScreen reads it from here so
+  // the small entry chunk never has to import three/drei just for a progress bar.
   loadActive: false,
   loadProgress: 0,
   setLoadStatus: (active, progress) =>

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 
 // Reads load progress from the store (mirrored there by ProgressBridge in
-// the lazy 3D chunk) rather than drei's useProgress directly — importing
-// drei here would pull the whole three stack into the entry bundle.
+// the split 3D chunks) rather than drei's useProgress directly — importing
+// drei here would pull the whole three stack into the entry chunk.
 export default function LoadingScreen() {
   const active = useStore((s) => s.loadActive);
   const progress = useStore((s) => s.loadProgress);

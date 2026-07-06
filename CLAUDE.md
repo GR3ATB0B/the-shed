@@ -112,13 +112,14 @@ links, list, and the corkboard's `cards`). **Shared** by the 3D overlay
   warning. A Blender re-export that renames a cluster mesh silently drops it —
   watch the console warning.
 - StrictMode double-invokes effects; the InsideModel load effect is idempotent.
-- A few lint errors remain (r3f `camera` immutability, a couple of dead vars,
-  one react-refresh export) — pre-existing or slated for the cleanup/polish pass.
+- `npm run lint` is clean and CI (deploy.yml) runs it — keep it that way. The
+  two intentional suppressions (r3f camera immutability in CameraRig, the
+  react-refresh export in InsideModel) carry inline justification comments.
 
-## Fonts (not yet loaded)
-`App.css` references IBM Plex Serif/Mono heavily but nothing loads them yet, so
-the UI currently falls back to Georgia. Loading the fonts is the cleanup pass's
-job, not done here.
+## Fonts
+IBM Plex Serif/Mono are self-hosted: `src/fonts.css` declares `@font-face`
+rules over the woff2 files in `src/fonts/` (latin subset only), imported at the
+top of `App.css`. Same no-CDN policy as Draco/HDR — don't swap in Google Fonts.
 
 ## Don't do
 - Don't push to GitHub.

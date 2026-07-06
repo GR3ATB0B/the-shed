@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useRef } from 'react';
+import { useEffect } from 'react';
 import * as THREE from 'three';
 import { useStore } from '../store';
 
@@ -7,12 +7,24 @@ const HIGHLIGHT_COLOR = new THREE.Color('#ffb15a');
 const MAX_EMISSIVE = 0.9;
 const LERP_SPEED = 8;
 
+// Module-level (HoverHighlight is a singleton): mesh → lerp entry for every
+// material currently carrying an emissive boost.
+const active = new Map();
+
 // Reads hoveredCluster and lerps an emissive boost onto every mesh in the
 // hovered cluster (or area, at the home view). This is the core "the whole
 // thing lights up" interaction. Registries come from the store, populated in
 // InsideModel on load.
 export default function HoverHighlight() {
-  const active = useRef(new Map());
+  // The GLTF scene (and its materials) is cached by useGLTF across mounts.
+  // If this unmounts mid-lerp (e.g. intro replay while hovering), restore
+  // every touched material so nothing stays boosted on re-entry.
+  useEffect(() => {
+    return () => {
+      for (const [mesh, entry] of active) restore(mesh, entry);
+      active.clear();
+    };
+  }, []);
 
   useFrame((_, dt) => {
     const {

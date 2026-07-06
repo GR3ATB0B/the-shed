@@ -213,18 +213,6 @@ export default function InsideModel(props) {
       }
     });
 
-    scene.traverse((o) => {
-      if (!o.isMesh || !o.material) return;
-      const mat = o.material;
-      if (mat.userData?.rimUniforms?.uRimIntensity) {
-        mat.userData.rimUniforms.uRimIntensity.value = 0;
-      }
-      if (mat.userData?.origEmissive && mat.emissive) {
-        mat.emissive.copy(mat.userData.origEmissive);
-        mat.emissiveIntensity = mat.userData.origEmissiveIntensity ?? 1;
-      }
-    });
-
     const areaRegistry = buildAreaRegistry(registry);
     setClusterMeshes(registry);
     setAreaMeshes(areaRegistry);
