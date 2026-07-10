@@ -24,7 +24,7 @@ Opens at `http://localhost:5173/`.
 ## Files of note
 
 - `src/components/WorldScene.jsx` — aerial cabin entrance, GSAP dive timeline
-- `src/components/InsideScene` is `Scene.jsx` — inside-the-shed canvas
+- `src/components/Scene.jsx` — inside-the-shed canvas
 - `src/components/InsideModel.jsx` — loads inside.glb, builds cluster registry, wires hover + click
 - `src/components/CameraRig.jsx` — view poses and tweens
 - `src/clusters.js` — cluster definitions and area routing

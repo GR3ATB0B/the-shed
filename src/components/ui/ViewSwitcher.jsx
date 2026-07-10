@@ -12,6 +12,7 @@ export default function ViewSwitcher() {
   const currentView = useStore((s) => s.currentView);
   const setView = useStore((s) => s.setView);
   const goHome = useStore((s) => s.goHome);
+  const cycleView = useStore((s) => s.cycleView);
   const selectedCluster = useStore((s) => s.selectedCluster);
 
   useEffect(() => {
@@ -22,10 +23,12 @@ export default function ViewSwitcher() {
       else if (e.key === '2') setView('desk');
       else if (e.key === '3') setView('floor');
       else if (e.key === '4') setView('bookshelf');
+      else if (e.key === 'ArrowRight') cycleView(1);
+      else if (e.key === 'ArrowLeft') cycleView(-1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [setView, goHome, selectedCluster]);
+  }, [setView, goHome, cycleView, selectedCluster]);
 
   return (
     <div className="view-switcher" aria-hidden={!!selectedCluster}>

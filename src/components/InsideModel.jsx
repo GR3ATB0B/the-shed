@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import {
@@ -7,8 +7,14 @@ import {
   clusterForName,
   isDecoration,
 } from '../clusters';
+import { assetUrl } from '../assetPath';
 import { useStore } from '../store';
 
+const INSIDE_MODEL_URL = assetUrl('models/inside.glb');
+
+// Stray objects left in the Blender export that should never render.
+// 'Sphere002' is a leftover debug/reference sphere in inside.glb — hiding it
+// here is cheaper than re-exporting the GLB.
 const HIDE_TOPLEVEL_NAMES = new Set(['Sphere002']);
 
 function findTopLevelName(mesh, root) {
@@ -73,74 +79,63 @@ function patchShedRoomMaterial(mesh) {
   mesh.material = mat;
 }
 
-function resolveTargets(obj) {
-  let p = obj;
-  let clusterId = null;
-  let areaId = null;
+// clusterId/areaId are stamped directly onto every cluster mesh (and its
+// ancestors) at load time, so the raycast hit itself almost always carries
+// them — read it straight off the hit. The parent walk only remains as a
+// fallback for unstamped meshes nested inside a stamped group.
+// Shared with HoverProbe, which resolves its own per-frame raycast hits.
+// eslint-disable-next-line react-refresh/only-export-components
+export function resolveTargets(obj) {
+  if (obj.userData?.clusterId || obj.userData?.areaId) {
+    return {
+      clusterId: obj.userData.clusterId ?? null,
+      areaId: obj.userData.areaId ?? null,
+    };
+  }
+  let p = obj.parent;
   while (p) {
-    if (!clusterId && p.userData?.clusterId) clusterId = p.userData.clusterId;
-    if (!areaId && p.userData?.areaId) areaId = p.userData.areaId;
+    if (p.userData?.clusterId || p.userData?.areaId) {
+      return {
+        clusterId: p.userData.clusterId ?? null,
+        areaId: p.userData.areaId ?? null,
+      };
+    }
     p = p.parent;
   }
-  return { clusterId, areaId };
+  return { clusterId: null, areaId: null };
 }
 
 export default function InsideModel(props) {
-  const { scene } = useGLTF('/models/inside.glb');
-  const setHovered = useStore((s) => s.setHovered);
+  const { scene } = useGLTF(INSIDE_MODEL_URL);
   const selectCluster = useStore((s) => s.selectCluster);
   const setView = useStore((s) => s.setView);
   const setClusterMeshes = useStore((s) => s.setClusterMeshes);
   const setAreaMeshes = useStore((s) => s.setAreaMeshes);
-  const hoveredRef = useRef(null);
 
-  const onPointerOver = useCallback(
-    (e) => {
-      const view = useStore.getState().currentView;
-      const { clusterId, areaId } = resolveTargets(e.object);
-      const id = view === 'home' ? areaId : clusterId;
-      if (!id || id === hoveredRef.current) return;
-      e.stopPropagation();
-      hoveredRef.current = id;
-      setHovered(id);
-      document.body.style.cursor = 'pointer';
-    },
-    [setHovered],
-  );
-
-  const onPointerOut = useCallback(
-    (e) => {
-      const view = useStore.getState().currentView;
-      const { clusterId, areaId } = resolveTargets(e.object);
-      const id = view === 'home' ? areaId : clusterId;
-      if (!id) return;
-      if (hoveredRef.current === id) {
-        hoveredRef.current = null;
-        setHovered(null);
-        document.body.style.cursor = '';
-      }
-    },
-    [setHovered],
-  );
-
+  // Hover is NOT handled here — HoverProbe raycasts per-frame instead,
+  // because the parallax camera drifts under a stationary cursor and
+  // event-driven hover goes stale. Only clicks stay on r3f's event path.
   const onClick = useCallback(
     (e) => {
       const view = useStore.getState().currentView;
       const { clusterId, areaId } = resolveTargets(e.object);
-      if (view === 'home') {
-        if (!areaId) return;
+      const id = view === 'home' ? areaId : clusterId;
+      if (!id) {
+        // Clicked set dressing / the room shell — flash a brief "just
+        // scenery" cue so interactive vs decorative stays legible.
         e.stopPropagation();
-        setView(areaId);
-      } else {
-        if (!clusterId) return;
-        e.stopPropagation();
-        selectCluster(clusterId);
+        useStore.getState().flashMissClick();
+        return;
       }
+      e.stopPropagation();
+      if (view === 'home') setView(id);
+      else selectCluster(id);
     },
     [selectCluster, setView],
   );
 
   useEffect(() => {
+    scene.updateMatrixWorld(true);
     scene.traverse((o) => {
       if (HIDE_TOPLEVEL_NAMES.has(o.name)) o.visible = false;
     });
@@ -148,16 +143,36 @@ export default function InsideModel(props) {
     const registry = {};
     Object.keys(CLUSTERS).forEach((id) => (registry[id] = []));
 
+    const _box = new THREE.Box3();
+    const _size = new THREE.Vector3();
+    // Meshes with a bounding box smaller than this in every axis don't earn a
+    // shadow-map slot — the shadow is invisible at this scale but still costs a
+    // render pass.
+    const MIN_SHADOW_CASTER = 0.08;
+
     scene.traverse((o) => {
       if (!o.isMesh) return;
-      o.castShadow = true;
-      o.receiveShadow = true;
       if (o.name === 'ShedRoom' && o.material) {
+        // The room shell receives shadows but never needs to cast them.
+        o.castShadow = false;
+        o.receiveShadow = true;
         patchShedRoomMaterial(o);
         return;
       }
+
+      o.geometry.computeBoundingBox();
+      _box.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld);
+      _box.getSize(_size);
+      const decoration = isDecoration(findTopLevelName(o, scene)) || isDecoration(o.name);
+      const tiny =
+        _size.x < MIN_SHADOW_CASTER &&
+        _size.y < MIN_SHADOW_CASTER &&
+        _size.z < MIN_SHADOW_CASTER;
+      o.castShadow = !decoration && !tiny;
+      o.receiveShadow = true;
+
       const topName = findTopLevelName(o, scene);
-      if (isDecoration(topName) || isDecoration(o.name)) return;
+      if (decoration) return;
       const clusterId = clusterForName(topName) || clusterForName(o.name);
       if (clusterId) {
         registry[clusterId].push(o);
@@ -172,21 +187,24 @@ export default function InsideModel(props) {
       }
     });
 
-    scene.traverse((o) => {
-      if (!o.isMesh || !o.material) return;
-      const mat = o.material;
-      if (mat.userData?.rimUniforms?.uRimIntensity) {
-        mat.userData.rimUniforms.uRimIntensity.value = 0;
-      }
-      if (mat.userData?.origEmissive && mat.emissive) {
-        mat.emissive.copy(mat.userData.origEmissive);
-        mat.emissiveIntensity = mat.userData.origEmissiveIntensity ?? 1;
-      }
-    });
-
     const areaRegistry = buildAreaRegistry(registry);
     setClusterMeshes(registry);
     setAreaMeshes(areaRegistry);
+
+    // Sanity check: cluster membership is matched by string prefix against
+    // Blender mesh names (which carry typos like "circut", "dumbbellwight").
+    // If a re-export renames a mesh, a cluster silently goes dead. Warn loudly
+    // so the drift is caught instead of shipping a non-interactive cluster.
+    const emptyClusters = Object.entries(registry)
+      .filter(([, meshes]) => meshes.length === 0)
+      .map(([id]) => id);
+    if (emptyClusters.length > 0) {
+      console.warn(
+        '[InsideModel] clusters matched zero meshes (mesh names may have ' +
+          'drifted on GLB re-export):',
+        emptyClusters,
+      );
+    }
 
     if (import.meta.env.DEV) {
       window.__insideScene = scene;
@@ -230,15 +248,15 @@ export default function InsideModel(props) {
   }, [scene, setClusterMeshes, setAreaMeshes]);
 
   return (
-    <group
-      onPointerOver={onPointerOver}
-      onPointerOut={onPointerOut}
-      onClick={onClick}
-      {...props}
-    >
+    <group onClick={onClick} {...props}>
       <primitive object={scene} />
     </group>
   );
 }
 
-useGLTF.preload('/models/inside.glb');
+// The preload trigger deliberately lives next to the model URL it preloads;
+// losing fast-refresh on this file is an acceptable trade.
+// eslint-disable-next-line react-refresh/only-export-components
+export function preloadInsideModel() {
+  useGLTF.preload(INSIDE_MODEL_URL);
+}

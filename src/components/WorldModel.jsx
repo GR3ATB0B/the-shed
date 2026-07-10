@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { assetUrl } from '../assetPath';
+
+const WORLD_MODEL_URL = assetUrl('models/world.glb');
 
 export default function WorldModel(props) {
-  const { scene } = useGLTF('/models/world.glb');
+  const { scene } = useGLTF(WORLD_MODEL_URL);
 
   useEffect(() => {
     scene.traverse((o) => {
@@ -37,4 +40,4 @@ export default function WorldModel(props) {
   return <primitive object={scene} rotation={[0, Math.PI / 9, 0]} {...props} />;
 }
 
-useGLTF.preload('/models/world.glb');
+useGLTF.preload(WORLD_MODEL_URL);

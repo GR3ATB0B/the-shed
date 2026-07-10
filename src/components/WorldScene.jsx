@@ -1,21 +1,29 @@
 import { Canvas } from '@react-three/fiber';
-import { Environment, PerspectiveCamera } from '@react-three/drei';
+import { Environment, Lightformer, PerspectiveCamera } from '@react-three/drei';
 import { Suspense, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { useStore } from '../store';
+import { prefersReducedMotion } from '../motion';
 import WorldModel from './WorldModel';
+import PostProcessing from './PostProcessing';
+import ProgressBridge from './ProgressBridge';
 
 const CABIN = new THREE.Vector3(-0.139, 0.05, -0.237);
 const AERIAL_POS = new THREE.Vector3(1.55, 0.95, 1.75);
 const CANOPY_POS = new THREE.Vector3(0.55, 0.42, 0.55);
 const DOOR_POS = new THREE.Vector3(0.18, 0.06, 0.0);
 
-function Camera({ paused, onArrived }) {
+// The intro fade must start 0.9s before the camera reaches the door. Both
+// numbers live here so the fade is positioned on the same GSAP timeline as
+// the dive instead of being hand-synced from a duplicate delay in App.jsx.
+const FADE_DURATION = 0.9;
+
+function Camera({ onArrived }) {
   const camRef = useRef();
-  const lookRef = useRef(new THREE.Vector3().copy(CABIN));
-  const dovingRef = useRef(false);
+  const divingRef = useRef(false);
   const introPhase = useStore((s) => s.introPhase);
+  const setFade = useStore((s) => s.setFade);
 
   useEffect(() => {
     if (!camRef.current) return;
@@ -25,14 +33,23 @@ function Camera({ paused, onArrived }) {
   }, []);
 
   useEffect(() => {
-    if (introPhase !== 'diving' || dovingRef.current) return;
-    dovingRef.current = true;
+    if (introPhase !== 'diving' || divingRef.current) return;
+    divingRef.current = true;
     const cam = camRef.current;
+
+    if (prefersReducedMotion()) {
+      cam.position.copy(DOOR_POS);
+      cam.lookAt(CABIN);
+      onArrived?.();
+      return;
+    }
+
     const posObj = {
       x: cam.position.x,
       y: cam.position.y,
       z: cam.position.z,
     };
+    const fadeObj = { v: 0 };
 
     const setCam = () => {
       cam.position.set(posObj.x, posObj.y, posObj.z);
@@ -61,8 +78,16 @@ function Camera({ paused, onArrived }) {
         duration: 3.4,
         ease: 'power2.in',
         onUpdate: setCam,
-      }, '-=1.2');
-  }, [introPhase, onArrived]);
+      }, '-=1.2')
+      .to(fadeObj, {
+        v: 1,
+        duration: FADE_DURATION,
+        ease: 'power2.in',
+        onUpdate: () => setFade(fadeObj.v),
+      }, `-=${FADE_DURATION}`);
+
+    return () => tl.kill();
+  }, [introPhase, onArrived, setFade]);
 
   return (
     <PerspectiveCamera
@@ -80,14 +105,16 @@ export default function WorldScene({ onArrived }) {
   return (
     <Canvas
       shadows
+      dpr={[1, 2]}
       gl={{
-        antialias: true,
+        antialias: false,
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 0.78,
       }}
     >
       <color attach="background" args={['#6e9bb8']} />
       <fog attach="fog" args={['#85a8c4', 8, 22]} />
+      <ProgressBridge />
       <Suspense fallback={null}>
         <Camera onArrived={onArrived} />
         <ambientLight intensity={0.55} color="#fff2dc" />
@@ -110,9 +137,34 @@ export default function WorldScene({ onArrived }) {
           groundColor="#3a2814"
           intensity={0.4}
         />
-        <Environment preset="park" environmentIntensity={0.4} />
+        <Environment resolution={128} environmentIntensity={0.4}>
+          <Lightformer
+            intensity={2}
+            color="#dcecff"
+            position={[0, 6, 0]}
+            scale={[10, 10, 1]}
+            rotation={[Math.PI / 2, 0, 0]}
+          />
+          <Lightformer
+            intensity={1}
+            color="#ffdca8"
+            position={[6, 4, 4]}
+            scale={[4, 4, 1]}
+          />
+          <Lightformer
+            intensity={0.5}
+            color="#3a5a2c"
+            position={[0, -4, 0]}
+            scale={[10, 10, 1]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          />
+        </Environment>
         <WorldModel />
       </Suspense>
+      {/* Same color grade as the interior Scene so the intro→inside cut
+          doesn't pop in vignette/hue/brightness. The composer's 4x MSAA
+          replaces canvas AA (antialias: false above), matching Scene. */}
+      <PostProcessing />
     </Canvas>
   );
 }

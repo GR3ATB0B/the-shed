@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { useStore } from '../store';
+import { motionDuration, prefersReducedMotion } from '../motion';
 
 const VIEWS = {
   home: {
@@ -54,7 +55,11 @@ export default function CameraRig() {
   const target = useRef(new THREE.Vector3().copy(VIEWS.home.look));
   const parallaxScale = useRef(VIEWS.home.parallax);
   const animating = useRef(false);
+  const desiredRef = useRef(new THREE.Vector3());
+  const lookRef = useRef(new THREE.Vector3());
 
+  /* eslint-disable react-hooks/immutability -- r3f cameras are imperative
+     THREE objects; mutating position/fov is the intended API. */
   useEffect(() => {
     const v = VIEWS.home;
     camera.position.copy(v.pos);
@@ -65,9 +70,13 @@ export default function CameraRig() {
       window.__camera = camera;
     }
   }, [camera]);
+  /* eslint-enable react-hooks/immutability */
 
   useEffect(() => {
     const onMove = (e) => {
+      // While an overlay is open the camera is pinned anyway — skip the work
+      // entirely instead of computing parallax that gets damped to ~zero.
+      if (useStore.getState().selectedCluster) return;
       mouse.current.x = (e.clientX / size.width) * 2 - 1;
       mouse.current.y = (e.clientY / size.height) * 2 - 1;
     };
@@ -78,6 +87,7 @@ export default function CameraRig() {
   useEffect(() => {
     const v = VIEWS[currentView] || VIEWS.home;
     animating.current = true;
+    const dur = motionDuration(1.1);
     const tweenPos = {
       x: restingPos.current.x,
       y: restingPos.current.y,
@@ -94,7 +104,7 @@ export default function CameraRig() {
       x: v.pos.x,
       y: v.pos.y,
       z: v.pos.z,
-      duration: 1.1,
+      duration: dur,
       ease: 'power3.inOut',
       onUpdate: () => {
         restingPos.current.set(tweenPos.x, tweenPos.y, tweenPos.z);
@@ -104,7 +114,7 @@ export default function CameraRig() {
       x: v.look.x,
       y: v.look.y,
       z: v.look.z,
-      duration: 1.1,
+      duration: dur,
       ease: 'power3.inOut',
       onUpdate: () => {
         restingLook.current.set(tweenLook.x, tweenLook.y, tweenLook.z);
@@ -115,7 +125,7 @@ export default function CameraRig() {
     });
     gsap.to(tweenFov, {
       f: v.fov,
-      duration: 1.1,
+      duration: dur,
       ease: 'power3.inOut',
       onUpdate: () => {
         camera.fov = tweenFov.f;
@@ -124,13 +134,13 @@ export default function CameraRig() {
     });
     gsap.to(parallaxScale, {
       current: v.parallax,
-      duration: 1.1,
+      duration: dur,
       ease: 'power3.inOut',
     });
   }, [currentView, camera]);
 
   useFrame((_, dt) => {
-    if (animating.current) {
+    if (animating.current || prefersReducedMotion()) {
       camera.position.copy(restingPos.current);
       target.current.copy(restingLook.current);
       camera.lookAt(target.current);
@@ -144,14 +154,14 @@ export default function CameraRig() {
     const py =
       (-mouse.current.y * parallaxScale.current * 0.5 + breathY) * damp;
 
-    const desired = new THREE.Vector3(
+    const desired = desiredRef.current.set(
       restingPos.current.x + px,
       restingPos.current.y + py,
       restingPos.current.z,
     );
     camera.position.lerp(desired, Math.min(1, dt * 4));
 
-    const look = new THREE.Vector3(
+    const look = lookRef.current.set(
       restingLook.current.x +
         mouse.current.x * parallaxScale.current * 1.0 * damp,
       restingLook.current.y -

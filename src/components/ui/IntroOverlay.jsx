@@ -28,6 +28,7 @@ export default function IntroOverlay() {
           e.stopPropagation();
           skipIntro();
         }}
+        aria-label="Skip the intro and go straight inside"
       >
         skip →
       </button>
